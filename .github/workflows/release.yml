@@ -1,37 +1,46 @@
 name: Build, Test & Release
 
-# Sets the trigger to changing the VERSION file in the main branch
 on:
   push:
     branches:
-    - main
+      - main
     paths:
-    - 'VERSION'
+      - 'VERSION'
 
-# Allows the workflow to create release
 permissions:
   contents: write
 
 jobs:
   build_test_and_release:
     runs-on: windows-latest
+
+    env:
+      OUTPUT_DIR: ./output
+
     steps:
     - name: Sync Repo to the Server
-      uses: actions/checkout@v1
+      uses: actions/checkout@v3
+
+    - name: Validate Version
+      run: |
+        $version = Get-Content VERSION
+        if ($version -notmatch '^\d+\.\d+\.\d+$') {
+          Write-Error "Invalid version format in VERSION file. Expected format: X.Y.Z"
+          exit 1
+        }
+        Write-Output "VERSION=$version" >> $env:GITHUB_ENV
+
+    - name: Prepare Output Directory
+      run: |
+        if (!(Test-Path -Path $env:OUTPUT_DIR)) {
+          New-Item -ItemType Directory -Path $env:OUTPUT_DIR
+        }
 
     - name: Compile 64bit Binary
       run: |
+        set -e
         windres version.rc -o version.o
-        gcc .\src\main.c version.o -o .\output\main.exe -s -m64
-
-
-    - name: Remove Placeholder
-      run: Remove-Item output/.gitkeep
-
-    - name: Read Version
-      run: |
-        $version = Get-Content VERSION
-        Write-Output "VERSION=$version" >> $env:GITHUB_ENV
+        gcc .\src\main.c version.o -o $env:OUTPUT_DIR\main.exe -s -m64
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
@@ -42,4 +51,4 @@ jobs:
         draft: false
         prerelease: false
         fail_on_unmatched_files: true
-        files: ./output/*
+        files: ${{ env.OUTPUT_DIR }}/*
