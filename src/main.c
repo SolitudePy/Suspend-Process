@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <stdio.h>
+#include <tchar.h>
 
 int main() {
     STARTUPINFOEX startupInfoEx = {0};
@@ -52,10 +53,10 @@ int main() {
         return 1;
     }
 
-    // Create the child process, which will inherit the job object and start in a suspended state
+    // Create the child process, which will inherit the job object
     if (!CreateProcess(
             NULL,                // Application name
-            "notepad.exe",      // Command line
+            "cmd.exe \"                                                                 \"", // Command line with enough spaces
             NULL,                // Process attributes
             NULL,                // Thread attributes
             FALSE,               // Inherit handles
@@ -71,7 +72,40 @@ int main() {
         return 1;
     }
 
-    printf("Child process created in suspended state using job object. PID: %lu\n", processInfo.dwProcessId);
+    printf("Child process created using job object. PID: %lu\n", processInfo.dwProcessId);
+
+    // Modify the PEB to update the command line
+    PROCESS_BASIC_INFORMATION pbi;
+    ULONG returnLength;
+    NTSTATUS status = NtQueryInformationProcess(processInfo.hProcess, ProcessBasicInformation, &pbi, sizeof(pbi), &returnLength);
+    if (status != 0) {
+        printf("Failed to query process information. Error: %lu\n", GetLastError());
+        TerminateProcess(processInfo.hProcess, 1);
+        DeleteProcThreadAttributeList(startupInfoEx.lpAttributeList);
+        free(startupInfoEx.lpAttributeList);
+        CloseHandle(jobHandle);
+        return 1;
+    }
+
+    PEB* peb = (PEB*)pbi.PebBaseAddress;
+    RTL_USER_PROCESS_PARAMETERS* params;
+    ReadProcessMemory(processInfo.hProcess, &peb->ProcessParameters, &params, sizeof(params), NULL);
+
+    WCHAR newCommandLine[] = L"cmd.exe /C echo Hello, World!";
+    size_t newCommandLineLength = wcslen(newCommandLine) * sizeof(WCHAR);
+    WriteProcessMemory(processInfo.hProcess, params->CommandLine.Buffer, newCommandLine, newCommandLineLength, NULL);
+
+    // Unfreeze the job object to allow the process to run
+    JOBOBJECT_BASIC_LIMIT_INFORMATION jobLimitInfo = {0};
+    jobLimitInfo.LimitFlags = 0; // Clear the freeze flag
+    if (!SetInformationJobObject(jobHandle, JobObjectBasicLimitInformation, &jobLimitInfo, sizeof(jobLimitInfo))) {
+        printf("Failed to unfreeze the job object. Error: %lu\n", GetLastError());
+        TerminateProcess(processInfo.hProcess, 1);
+        DeleteProcThreadAttributeList(startupInfoEx.lpAttributeList);
+        free(startupInfoEx.lpAttributeList);
+        CloseHandle(jobHandle);
+        return 1;
+    }
 
     // Clean up
     DeleteProcThreadAttributeList(startupInfoEx.lpAttributeList);
