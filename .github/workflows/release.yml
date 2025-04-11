@@ -38,8 +38,7 @@ jobs:
 
     - name: Compile 64bit Binary
       run: |
-        windres version.rc -o version.o
-        gcc .\src\main.c version.o -o $env:OUTPUT_DIR\main.exe -s -m64
+        gcc .\src\main.c -o $env:OUTPUT_DIR\main.exe -s -m64
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
