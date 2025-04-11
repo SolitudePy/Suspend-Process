@@ -37,7 +37,7 @@ typedef struct _PROCESS_BASIC_INFORMATION {
 typedef LONG NTSTATUS;
 
 // Declare the NtQueryInformationProcess function
-extern "C" NTSTATUS NTAPI NtQueryInformationProcess(
+NTSTATUS NTAPI NtQueryInformationProcess(
     HANDLE ProcessHandle,
     ULONG ProcessInformationClass,
     PVOID ProcessInformation,
