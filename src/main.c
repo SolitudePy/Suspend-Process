@@ -1,49 +1,10 @@
 #include <windows.h>
+#include <winternl.h> // Include the Windows Native API header
 #include <stdio.h>
 #include <tchar.h>
 
-// Define missing structures and constants for Windows Native API
+// Define the constant for ProcessBasicInformation
 #define ProcessBasicInformation 0
-
-typedef struct _UNICODE_STRING {
-    USHORT Length;
-    USHORT MaximumLength;
-    PWSTR Buffer;
-} UNICODE_STRING;
-
-typedef struct _RTL_USER_PROCESS_PARAMETERS {
-    BYTE Reserved1[16];
-    PVOID Reserved2[10];
-    UNICODE_STRING ImagePathName;
-    UNICODE_STRING CommandLine;
-} RTL_USER_PROCESS_PARAMETERS;
-
-typedef struct _PEB {
-    BYTE Reserved1[2];
-    BYTE BeingDebugged;
-    BYTE Reserved2[1];
-    PVOID Reserved3[2];
-    struct _RTL_USER_PROCESS_PARAMETERS* ProcessParameters;
-} PEB;
-
-typedef struct _PROCESS_BASIC_INFORMATION {
-    PVOID Reserved1;
-    PEB* PebBaseAddress;
-    PVOID Reserved2[2];
-    ULONG_PTR UniqueProcessId;
-    PVOID Reserved3;
-} PROCESS_BASIC_INFORMATION;
-
-typedef LONG NTSTATUS;
-
-// Declare the NtQueryInformationProcess function
-NTSTATUS NTAPI NtQueryInformationProcess(
-    HANDLE ProcessHandle,
-    ULONG ProcessInformationClass,
-    PVOID ProcessInformation,
-    ULONG ProcessInformationLength,
-    PULONG ReturnLength
-);
 
 int main() {
     STARTUPINFOEX startupInfoEx = {0};
