@@ -1,4 +1,4 @@
-name: Build
+name: Build and Publish Draft Release
 
 on:
   push:
@@ -26,8 +26,13 @@ jobs:
       run: |
         gcc .\src\main.c -o $env:OUTPUT_DIR\main.exe -s -m64
 
-    - name: Upload Build Artifact
-      uses: actions/upload-artifact@v4
+    - name: Create or Update Draft Release
+      uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        name: compiled-binary
-        path: ${{ env.OUTPUT_DIR }}/main.exe
+        tag_name: nightly
+        name: Nightly Build
+        draft: false
+        prerelease: true
+        files: ${{ env.OUTPUT_DIR }}/main.exe
