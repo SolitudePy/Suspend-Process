@@ -1,15 +1,12 @@
-name: Release
+name: Build
 
 on:
   push:
-    tags:
-      - 'v*'
-
-permissions:
-  contents: write
+    branches:
+      - main
 
 jobs:
-  release:
+  build:
     runs-on: windows-latest
 
     env:
@@ -29,9 +26,8 @@ jobs:
       run: |
         gcc .\src\main.c -o $env:OUTPUT_DIR\main.exe -s -m64
 
-    - name: Create Release
-      uses: softprops/action-gh-release@v2
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v3
       with:
-        tag_name: ${{ github.ref_name }}
-        name: Release ${{ github.ref_name }}
-        files: ${{ env.OUTPUT_DIR }}/main.exe
+        name: compiled-binary
+        path: ${{ env.OUTPUT_DIR }}/main.exe
