@@ -24,7 +24,7 @@ jobs:
 
     - name: Compile 64bit Binary
       run: |
-        gcc .\src\main.c -o $env:OUTPUT_DIR\main.exe -s -m64
+        gcc .\src\main.c -o $env:OUTPUT_DIR\main.exe -s -m64 -lntdll
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
